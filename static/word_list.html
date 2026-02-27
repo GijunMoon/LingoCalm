@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LingoCalm - Word List</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      font-family: "Lexend", sans-serif;
+      background: #f8f3e1;
+      color: #2d3327;
+      min-height: 100dvh;
+    }
+  </style>
+</head>
+<body class="max-w-3xl mx-auto px-5 py-6">
+  <header class="mb-5">
+    <div class="flex items-center justify-between mb-4">
+      <a href="/dashboard" class="text-sm font-semibold text-[#55603d] hover:underline">Back</a>
+      <div class="flex items-center gap-2">
+        <a
+          id="practice-link"
+          href="/practice"
+          class="rounded-xl border border-[#aeb784]/40 px-4 py-2 text-sm font-semibold text-[#55603d] hover:bg-white/40"
+        >
+          Practice
+        </a>
+        <a
+          id="add-word-link"
+          href="/word-add"
+          class="rounded-xl bg-[#aeb784] px-4 py-2 text-sm font-semibold text-white hover:brightness-95"
+        >
+          + Add Word
+        </a>
+      </div>
+    </div>
+    <h1 id="category-title" class="text-3xl font-bold">Words</h1>
+    <p id="category-subtitle" class="text-sm text-[#2d3327]/70 mt-1">Loading...</p>
+  </header>
+
+  <section class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+    <input
+      id="search-input"
+      type="text"
+      placeholder="Search word..."
+      class="sm:col-span-2 rounded-xl border-[#aeb784]/30"
+    />
+    <select id="sort-select" class="rounded-xl border-[#aeb784]/30">
+      <option value="created_at">Recent</option>
+      <option value="alphabet">Alphabetical</option>
+    </select>
+  </section>
+
+  <section id="word-list" class="space-y-3">
+    <p class="text-sm text-[#2d3327]/70">Loading words...</p>
+  </section>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const params = new URLSearchParams(window.location.search);
+    const rawCategoryName = params.get("name") || "";
+    const categoryName = rawCategoryName.toLowerCase();
+
+    function getToken() {
+      return localStorage.getItem("token");
+    }
+
+    function requireAuth() {
+      if (!getToken()) {
+        window.location.href = "/login";
+        return false;
+      }
+      return true;
+    }
+
+    function authHeaders() {
+      return { Authorization: `Bearer ${getToken()}` };
+    }
+
+    function parseError(data, fallback) {
+      if (!data) return fallback;
+      if (typeof data.detail === "string") return data.detail;
+      if (Array.isArray(data.detail)) return data.detail[0]?.msg || fallback;
+      return fallback;
+    }
+
+    function displayName(name) {
+      if (!name) return "All";
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    async function fetchWords() {
+      const search = document.getElementById("search-input").value.trim();
+      const sort = document.getElementById("sort-select").value;
+      const query = new URLSearchParams();
+
+      if (categoryName) query.set("category", categoryName);
+      if (search) query.set("search", search);
+      query.set("sort", sort);
+
+      const response = await fetch(`${API_BASE}/words?${query.toString()}`, {
+        headers: authHeaders(),
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (_) {
+        data = null;
+      }
+
+      if (!response.ok) {
+        throw new Error(parseError(data, "Failed to load words"));
+      }
+
+      return data;
+    }
+
+    function renderWords(words) {
+      const container = document.getElementById("word-list");
+
+      if (!words.length) {
+        container.innerHTML = `
+          <div class="rounded-2xl border border-dashed border-[#aeb784]/50 bg-white/40 p-6 text-center">
+            <p class="font-semibold mb-2">No words found</p>
+            <p class="text-sm text-[#2d3327]/70">Try changing search/sort, or add a new word.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = words
+        .map(
+          (word) => `
+            <button
+              class="w-full rounded-xl border border-[#aeb784]/25 bg-white/70 px-4 py-4 text-left hover:bg-white"
+              onclick="openWord(${word.id})"
+            >
+              <p class="font-semibold">${escapeHtml(word.word_text)}</p>
+              <p class="text-sm text-[#2d3327]/70">${escapeHtml(word.meaning || "No meaning")}</p>
+              <p class="text-xs text-[#7e8959] mt-1">${escapeHtml(word.language)} | ${escapeHtml(word.category)}</p>
+            </button>
+          `
+        )
+        .join("");
+    }
+
+    function openWord(id) {
+      window.location.href = `/word-details?id=${id}`;
+    }
+
+    async function reloadWords() {
+      try {
+        const words = await fetchWords();
+        renderWords(words);
+      } catch (error) {
+        document.getElementById("word-list").innerHTML =
+          `<p class="text-sm text-red-600">${error.message}</p>`;
+      }
+    }
+
+    document.getElementById("search-input").addEventListener("input", () => {
+      reloadWords();
+    });
+
+    document.getElementById("sort-select").addEventListener("change", () => {
+      reloadWords();
+    });
+
+    (async () => {
+      if (!requireAuth()) return;
+
+      const title = document.getElementById("category-title");
+      const subtitle = document.getElementById("category-subtitle");
+      const addLink = document.getElementById("add-word-link");
+      const practiceLink = document.getElementById("practice-link");
+
+      if (categoryName) {
+        title.textContent = `${displayName(categoryName)} Words`;
+        subtitle.textContent = "Manage words in this category.";
+        addLink.href = `/word-add?category=${encodeURIComponent(categoryName)}`;
+        practiceLink.href = `/practice?category=${encodeURIComponent(categoryName)}`;
+      } else {
+        title.textContent = "All Words";
+        subtitle.textContent = "Manage all saved words.";
+        practiceLink.href = "/practice";
+      }
+
+      await reloadWords();
+    })();
+  </script>
+</body>
+</html>

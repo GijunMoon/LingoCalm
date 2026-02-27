@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LingoCalm - Word Details</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      font-family: "Lexend", sans-serif;
+      background: #f8f3e1;
+      color: #2d3327;
+      min-height: 100dvh;
+    }
+  </style>
+</head>
+<body class="max-w-2xl mx-auto px-5 py-6">
+  <header class="flex items-center justify-between mb-6">
+    <a id="back-link" href="/dashboard" class="text-sm font-semibold text-[#55603d] hover:underline">Back</a>
+    <div class="flex items-center gap-2">
+      <button
+        id="toggle-edit-button"
+        class="rounded-lg border border-[#aeb784]/40 px-3 py-2 text-sm font-semibold text-[#55603d] hover:bg-white/40"
+      >
+        Edit
+      </button>
+      <button
+        id="delete-button"
+        class="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+      >
+        Delete
+      </button>
+    </div>
+  </header>
+
+  <main class="rounded-2xl bg-white/60 border border-[#aeb784]/20 p-6 mb-4">
+    <p class="text-xs uppercase tracking-widest text-[#7e8959] font-semibold mb-2">Word Details</p>
+    <h1 id="word-text" class="text-4xl font-bold mb-2">-</h1>
+    <p id="meaning-text" class="text-lg text-[#2d3327]/80 mb-5">-</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="rounded-xl border border-[#aeb784]/20 bg-white/50 px-4 py-3">
+        <p class="text-xs uppercase tracking-wide text-[#7e8959] mb-1">Category</p>
+        <p id="category-text" class="font-semibold">-</p>
+      </div>
+      <div class="rounded-xl border border-[#aeb784]/20 bg-white/50 px-4 py-3">
+        <p class="text-xs uppercase tracking-wide text-[#7e8959] mb-1">Language</p>
+        <p id="language-text" class="font-semibold">-</p>
+      </div>
+      <div class="rounded-xl border border-[#aeb784]/20 bg-white/50 px-4 py-3">
+        <p class="text-xs uppercase tracking-wide text-[#7e8959] mb-1">Added At</p>
+        <p id="created-at-text" class="font-semibold">-</p>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <a
+        id="practice-link"
+        href="/practice"
+        class="inline-block rounded-lg bg-[#aeb784] px-3 py-2 text-sm font-semibold text-white hover:brightness-95"
+      >
+        Practice This Category
+      </a>
+    </div>
+  </main>
+
+  <section id="edit-panel" class="hidden rounded-2xl bg-white/70 border border-[#aeb784]/30 p-6">
+    <h2 class="text-xl font-bold mb-4">Edit Word</h2>
+    <form id="edit-form" class="space-y-4">
+      <div>
+        <label for="edit-word" class="block text-sm font-semibold mb-1">Word / Phrase</label>
+        <input id="edit-word" type="text" class="w-full rounded-xl border-[#aeb784]/30" required />
+      </div>
+      <div>
+        <label for="edit-meaning" class="block text-sm font-semibold mb-1">Meaning</label>
+        <textarea id="edit-meaning" class="w-full rounded-xl border-[#aeb784]/30 min-h-24" required></textarea>
+      </div>
+      <div>
+        <label for="edit-language" class="block text-sm font-semibold mb-1">Language</label>
+        <select id="edit-language" class="w-full rounded-xl border-[#aeb784]/30">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="ja">Japanese</option>
+          <option value="it">Italian</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="edit-category-mode" class="block text-sm font-semibold mb-1">Category Mode</label>
+        <select id="edit-category-mode" class="w-full rounded-xl border-[#aeb784]/30">
+          <option value="auto">Auto</option>
+          <option value="existing">Select Existing</option>
+          <option value="new">Create New</option>
+        </select>
+      </div>
+
+      <div id="edit-existing-wrapper" class="hidden">
+        <label for="edit-existing-category" class="block text-sm font-semibold mb-1">Existing Category</label>
+        <select id="edit-existing-category" class="w-full rounded-xl border-[#aeb784]/30"></select>
+      </div>
+
+      <div id="edit-new-wrapper" class="hidden">
+        <label for="edit-new-category-name" class="block text-sm font-semibold mb-1">New Category Name</label>
+        <input
+          id="edit-new-category-name"
+          type="text"
+          placeholder="e.g. travel"
+          class="w-full rounded-xl border-[#aeb784]/30"
+        />
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button
+          type="submit"
+          class="rounded-lg bg-[#aeb784] px-4 py-2 text-sm font-semibold text-white hover:brightness-95"
+        >
+          Save Changes
+        </button>
+        <button
+          type="button"
+          id="cancel-edit-button"
+          class="rounded-lg border border-[#aeb784]/40 px-4 py-2 text-sm font-semibold text-[#55603d] hover:bg-white/40"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const params = new URLSearchParams(window.location.search);
+    const wordId = params.get("id");
+    let currentWord = null;
+    let categoryNames = [];
+
+    function getToken() {
+      return localStorage.getItem("token");
+    }
+
+    function requireAuth() {
+      if (!getToken()) {
+        window.location.href = "/login";
+        return false;
+      }
+      return true;
+    }
+
+    function authHeaders() {
+      return { Authorization: `Bearer ${getToken()}` };
+    }
+
+    function parseError(data, fallback) {
+      if (!data) return fallback;
+      if (typeof data.detail === "string") return data.detail;
+      if (Array.isArray(data.detail)) return data.detail[0]?.msg || fallback;
+      return fallback;
+    }
+
+    function displayName(name) {
+      if (!name) return "";
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+
+    function toggleEditCategoryInputs() {
+      const mode = document.getElementById("edit-category-mode").value;
+      document.getElementById("edit-existing-wrapper").classList.toggle("hidden", mode !== "existing");
+      document.getElementById("edit-new-wrapper").classList.toggle("hidden", mode !== "new");
+    }
+
+    function setEditPanelVisible(isVisible) {
+      document.getElementById("edit-panel").classList.toggle("hidden", !isVisible);
+      document.getElementById("toggle-edit-button").textContent = isVisible ? "Close" : "Edit";
+    }
+
+    async function fetchWord() {
+      const response = await fetch(`${API_BASE}/words/${wordId}`, {
+        headers: authHeaders(),
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (_) {
+        data = null;
+      }
+
+      if (!response.ok) {
+        throw new Error(parseError(data, "Failed to load word"));
+      }
+      return data;
+    }
+
+    async function fetchCategories() {
+      const response = await fetch(`${API_BASE}/categories`, { headers: authHeaders() });
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (_) {
+        data = null;
+      }
+      if (!response.ok) {
+        throw new Error(parseError(data, "Failed to load categories"));
+      }
+      return data;
+    }
+
+    async function updateWord(payload) {
+      const response = await fetch(`${API_BASE}/words/${wordId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (_) {
+        data = null;
+      }
+
+      if (!response.ok) {
+        throw new Error(parseError(data, "Failed to update word"));
+      }
+
+      return data;
+    }
+
+    async function deleteWord() {
+      const response = await fetch(`${API_BASE}/words/${wordId}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      if (!response.ok && response.status !== 204) {
+        let data = null;
+        try {
+          data = await response.json();
+        } catch (_) {
+          data = null;
+        }
+        throw new Error(parseError(data, "Failed to delete word"));
+      }
+    }
+
+    function renderWord(word) {
+      document.getElementById("word-text").textContent = word.word_text;
+      document.getElementById("meaning-text").textContent = word.meaning || "No meaning";
+      document.getElementById("category-text").textContent = displayName(word.category);
+      document.getElementById("language-text").textContent = word.language;
+
+      const createdAt = word.created_at ? new Date(word.created_at) : null;
+      document.getElementById("created-at-text").textContent = createdAt
+        ? createdAt.toLocaleString()
+        : "-";
+
+      document.getElementById("back-link").href = `/word-list?name=${encodeURIComponent(word.category)}`;
+      document.getElementById("practice-link").href = `/practice?category=${encodeURIComponent(word.category)}`;
+    }
+
+    function fillEditForm(word) {
+      document.getElementById("edit-word").value = word.word_text || "";
+      document.getElementById("edit-meaning").value = word.meaning || "";
+      document.getElementById("edit-language").value = word.language || "en";
+      document.getElementById("edit-category-mode").value = "existing";
+      document.getElementById("edit-new-category-name").value = "";
+
+      const select = document.getElementById("edit-existing-category");
+      select.innerHTML = "";
+      categoryNames.forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+
+      if (word.category && !categoryNames.includes(word.category)) {
+        const option = document.createElement("option");
+        option.value = word.category;
+        option.textContent = word.category;
+        select.appendChild(option);
+      }
+
+      select.value = word.category || "";
+      toggleEditCategoryInputs();
+    }
+
+    document.getElementById("delete-button").addEventListener("click", async () => {
+      if (!confirm("Delete this word?")) return;
+
+      try {
+        await deleteWord();
+        const categoryQuery = currentWord?.category ? `?name=${encodeURIComponent(currentWord.category)}` : "";
+        window.location.href = `/word-list${categoryQuery}`;
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+
+    document.getElementById("toggle-edit-button").addEventListener("click", () => {
+      const panelHidden = document.getElementById("edit-panel").classList.contains("hidden");
+      if (panelHidden && currentWord) {
+        fillEditForm(currentWord);
+      }
+      setEditPanelVisible(panelHidden);
+    });
+
+    document.getElementById("cancel-edit-button").addEventListener("click", () => {
+      setEditPanelVisible(false);
+    });
+
+    document.getElementById("edit-category-mode").addEventListener("change", toggleEditCategoryInputs);
+
+    document.getElementById("edit-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!currentWord) return;
+
+      const mode = document.getElementById("edit-category-mode").value;
+      const payload = {
+        word_text: document.getElementById("edit-word").value.trim(),
+        meaning: document.getElementById("edit-meaning").value.trim(),
+        language: document.getElementById("edit-language").value,
+        category_mode: mode,
+      };
+
+      if (!payload.word_text || !payload.meaning || !payload.language) {
+        alert("Word, meaning, and language are required.");
+        return;
+      }
+
+      if (mode === "existing") {
+        const selected = document.getElementById("edit-existing-category").value.trim();
+        if (!selected) {
+          alert("Please select an existing category.");
+          return;
+        }
+        payload.category_name = selected;
+      }
+
+      if (mode === "new") {
+        const newCategory = document.getElementById("edit-new-category-name").value.trim();
+        if (!newCategory) {
+          alert("Please enter a new category name.");
+          return;
+        }
+        payload.category_name = newCategory;
+      }
+
+      try {
+        await updateWord(payload);
+        currentWord = await fetchWord();
+        renderWord(currentWord);
+        fillEditForm(currentWord);
+        setEditPanelVisible(false);
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+
+    (async () => {
+      if (!requireAuth()) return;
+      if (!wordId) {
+        alert("Word ID is missing.");
+        window.location.href = "/dashboard";
+        return;
+      }
+
+      try {
+        const categories = await fetchCategories();
+        categoryNames = (categories || []).map((item) => item.name).filter(Boolean);
+        currentWord = await fetchWord();
+        renderWord(currentWord);
+        fillEditForm(currentWord);
+      } catch (error) {
+        alert(error.message);
+        window.location.href = "/dashboard";
+      }
+    })();
+  </script>
+</body>
+</html>

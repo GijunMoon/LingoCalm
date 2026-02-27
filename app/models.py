@@ -1,5 +1,3 @@
-"""SQLAlchemy ORM models."""
-
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
@@ -7,9 +5,8 @@ from sqlalchemy.orm import relationship
 
 from .database import Base
 
-
 class User(Base):
-    """Registered user."""
+    """가입된 유저"""
 
     __tablename__ = "users"
 
@@ -22,7 +19,7 @@ class User(Base):
 
 
 class Category(Base):
-    """Word category table."""
+    """단어 카테고리"""
 
     __tablename__ = "categories"
 
@@ -34,7 +31,7 @@ class Category(Base):
 
 
 class Word(Base):
-    """Vocabulary entry owned by one user."""
+    """단어 목록"""
 
     __tablename__ = "words"
     __table_args__ = (
@@ -43,7 +40,7 @@ class Word(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     word_text = Column(String(120), index=True, nullable=False)
-    meaning = Column(String(500), nullable=False)  # Korean meaning used for classification.
+    meaning = Column(String(500), nullable=False)
     language = Column(String(20), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 

@@ -1,4 +1,4 @@
-"""Authentication helpers: bcrypt + JWT."""
+"""bcrypt + JWT 구조의 암호화 사용자 인증"""
 
 import os
 from datetime import datetime, timedelta, timezone
@@ -12,12 +12,10 @@ from sqlalchemy.orm import Session
 from . import models
 from .database import get_db
 
-# Keep secrets in environment variables in production.
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-only-change-me")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
 
-# tokenUrl points to our login endpoint for OpenAPI docs.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 

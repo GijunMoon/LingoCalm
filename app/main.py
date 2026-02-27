@@ -1,5 +1,3 @@
-"""FastAPI application entrypoint."""
-
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -12,19 +10,17 @@ from .models import Base, Category
 from .routers import categories, practice, users, words
 from .utils import DEFAULT_CATEGORY, get_rule_category_names
 
-# Create DB tables on startup (Alembic can be added later if needed).
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Vocabulary Learning API",
     version="1.0.0",
-    description="FastAPI + SQLite + JWT + rule/FastText category classification",
+    description="빠르고 가벼운 단어장 서비스",
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
 
-# Allow front-end clients to call this API.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,7 +29,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static assets if present.
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
@@ -46,7 +41,6 @@ app.include_router(practice.router)
 
 @app.on_event("startup")
 def seed_predefined_categories():
-    """Ensure predefined categories from rule dictionary exist in DB."""
     db = SessionLocal()
     try:
         existing = {name for (name,) in db.query(Category.name).all()}
@@ -63,12 +57,11 @@ def seed_predefined_categories():
 
 @app.get("/")
 def root():
-    """UI entrypoint."""
+    """UI entrypoint"""
     return RedirectResponse(url="/login", status_code=302)
 
 
 def _serve_static_file(filename: str) -> FileResponse:
-    """Serve one static HTML page."""
     target = STATIC_DIR / filename
     if not target.exists():
         raise HTTPException(status_code=404, detail=f"{filename} not found")
@@ -110,7 +103,8 @@ def practice_page():
     return _serve_static_file("practice.html")
 
 
+
+## 디버깅용 entry point
 @app.get("/health")
 def health():
-    """Health check endpoint for deployment probes."""
     return {"status": "ok"}

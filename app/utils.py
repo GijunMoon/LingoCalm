@@ -1,4 +1,4 @@
-"""Category classification helpers (JSON rule-based only)."""
+"""Category classification"""
 
 from __future__ import annotations
 
@@ -14,9 +14,9 @@ DEFAULT_CATEGORY = "other"
 @lru_cache(maxsize=1)
 def load_rules() -> dict[str, dict[str, list[str]]]:
     """
-    Load category rules from JSON and normalize legacy shape.
+    카테고리 룰을 불러와서 사용가능 형태로 변경
 
-    Supported JSON shapes:
+    JSON shapes:
     - {"food": ["apple", "bread"]}  # legacy
     - {"food": {"word_keywords": [...], "meaning_keywords": [...]}}
     """
@@ -39,12 +39,12 @@ def load_rules() -> dict[str, dict[str, list[str]]]:
 
 
 def get_rule_category_names() -> list[str]:
-    """Return predefined category names from rule dictionary."""
+    """사전 정의된 카테고리 이름 불러오기"""
     return list(load_rules().keys())
 
 
 def _normalize_text(text: str | None) -> str:
-    """Lowercase + remove punctuation to make matching stable."""
+    """텍스트 정제"""
     if not text:
         return ""
     text = text.lower().strip()
@@ -54,12 +54,12 @@ def _normalize_text(text: str | None) -> str:
 
 
 def _keywords(config: dict[str, list[str]], key: str) -> list[str]:
-    """Normalized keyword list for one key."""
+    """탐색가능한 키워드 형태"""
     return [kw for kw in (_normalize_text(item) for item in config.get(key, [])) if kw]
 
 
 def _score_by_keywords(text: str, keywords: list[str], weight: int = 1) -> int:
-    """Calculate simple rule score by substring matches."""
+    """유사도 매칭"""
     if not text or not keywords:
         return 0
 
@@ -72,11 +72,8 @@ def _score_by_keywords(text: str, keywords: list[str], weight: int = 1) -> int:
 
 def classify_word(word_text: str, meaning_text: str | None) -> str:
     """
-    Rule dictionary classifier.
-
-    Priority:
-    1) Korean meaning keyword match
-    2) Word keyword match
+    1) 한국어 의미
+    2) 키워드 매칭
     3) "other" fallback
     """
     rules = load_rules()
@@ -93,7 +90,6 @@ def classify_word(word_text: str, meaning_text: str | None) -> str:
         meaning_score = _score_by_keywords(normalized_meaning, meaning_keywords, weight=3)
         word_score = _score_by_keywords(normalized_word, word_keywords, weight=1)
 
-        # Exact word keyword match gets a strong bonus.
         if normalized_word in word_keywords:
             word_score += 30
 

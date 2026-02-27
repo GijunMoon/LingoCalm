@@ -1,5 +1,3 @@
-"""Category list and category-word endpoints."""
-
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -18,9 +16,9 @@ def list_categories(
     current_user: models.User = Depends(get_current_user),
 ):
     """
-    List category names and word counts for current user.
+    현재 사용자의 카테고리 이름과 단어 수를 나열
 
-    Includes categories from rule dictionary even when count is zero.
+    카운트가 0인 경우에도 규칙 사전의 카테고리를 포함함
     """
     rows = (
         db.query(models.Category.name, func.count(models.Word.id))
@@ -50,7 +48,7 @@ def list_words_by_category(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """List words filtered by one category name."""
+    """하나의 카테고리 이름으로 필터링된 단어를 나열"""
     words = (
         db.query(models.Word)
         .join(models.Category)
